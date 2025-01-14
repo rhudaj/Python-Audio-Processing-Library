@@ -11,6 +11,18 @@ from DataStructures.AudioSignal import AudioSignal, AudioSignal_FromFile
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
 
+import json
+
+async def send_log(websocket, message):
+    standardized_message = {
+        "type": "log",
+        "content": message,
+        "metadata": {
+            "timestamp": "2025-01-13T12:00:00Z"
+        }
+    }
+    await websocket.send(json.dumps(standardized_message))
+
 # FastAPI is a modern Python framework with built-in WebSocket support.
 # to run the server: uvicorn main:app --reload
 
@@ -45,20 +57,27 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # Output the shape of the NumPy array (audio samples)
             print(f"Audio file converted to numpy array with shape: {audio_signal.shape}")
-            await websocket.send_text("Audio file received and converted to numpy array.")  # Send message before closing
+
+            await websocket.send_text("Audio file received and converted to numpy array.")
 
         except Exception as e:
             print(f"Error while processing the audio data: {str(e)}")
             await websocket.send_text("Error while processing the audio file.")  # Send error message before closing
+            await websocket.close()
 
     # conver to midi:
 
     midi: MIDIFile = signal_to_midi(audio_signal, sample_rate)
 
-    await websocket.send_text("converted to midi file")
-
     with open ("output.mid", 'wb') as file:
         midi.writeFile(file)
+
+    await websocket.send_text("converted to midi and outputed file")
+
+    with open("output.mid", "rb") as file:
+        midi_bytes = file.read()
+
+    await websocket.send_bytes(midi_bytes)
 
     # Close the WebSocket connection
     await websocket.close()

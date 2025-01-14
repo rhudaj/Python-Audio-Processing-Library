@@ -336,8 +336,8 @@ def states_2_pianoroll(states: list, hop_time: float) -> list:
 
     return pianoroll
 
-def pianoroll_2_MidiFile(pianoroll: list[NoteInfo], bpm: float, Qfraction=1/4) -> midiutil.MIDIFile():
-    midi = midiutil.MIDIFile(1)         # initialize midi file obj
+def pianoroll_2_MidiFile(pianoroll: list[NoteInfo], bpm: float, Qfraction=1/4) -> midiutil.MIDIFile:
+    midi = midiutil.MIDIFile(numTracks=1)         # initialize midi file obj
     midi.addTempo(track=0, time=0, tempo=bpm)
     for note in pianoroll:
         mn = MidiNote(note, bpm, Qfraction)
@@ -353,7 +353,7 @@ def pianoroll_2_MidiFile(pianoroll: list[NoteInfo], bpm: float, Qfraction=1/4) -
 
 #---------------------- MAIN FUNCTION
 
-def signal_to_midi(audio_signal: np.ndarray, srate = float, debug_mode=False) -> midiutil.MIDIFile():
+def signal_to_midi(audio_signal: np.ndarray, srate = float, debug_mode=False) -> midiutil.MIDIFile:
     """
     Converts an audio signal to a MIDI file
     :param audio_signal (np.array):            Array containing audio samples
@@ -385,17 +385,17 @@ def signal_to_midi(audio_signal: np.ndarray, srate = float, debug_mode=False) ->
 
     # STEP 4
     pianoroll: list[NoteInfo] = states_2_pianoroll(states, hop_time = S.hop_length / srate)
-    # compare(pianoroll)
+    # compare(pianoroll) # uncomment for testing
 
     # STEP 5
     bpm = int(librosa.beat.tempo(y=audio_signal)[0])
 
     print(f'\t bpm = {bpm}')
 
-    midi = pianoroll_2_MidiFile(pianoroll, bpm, S.note_fraction)
+    midi_obj = pianoroll_2_MidiFile(pianoroll, bpm, S.note_fraction)
 
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
 
     # RETURN
-    return midi
+    return midi_obj
